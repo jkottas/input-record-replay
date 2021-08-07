@@ -16,13 +16,19 @@ namespace InputRecordReplay
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            DragMove();
+            if (e.LeftButton == MouseButtonState.Pressed)
+                DragMove();
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             SettingsPopup s = new SettingsPopup();
             s.ShowDialog();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            (DataContext as MainWindowViewModel)?.Cleanup();
         }
     }
 }

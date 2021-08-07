@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace InputRecordReplay
 {
@@ -13,12 +7,5 @@ namespace InputRecordReplay
     /// </summary>
     public partial class App : Application
     {
-        public static KeyBindings KeyBindings { get; set;}
-
-        private void Application_Exit(object sender, ExitEventArgs e)
-        {
-            
-            // save keybindings to settings
-        }
     }
 }
