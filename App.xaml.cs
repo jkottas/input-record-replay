@@ -13,5 +13,12 @@ namespace InputRecordReplay
     /// </summary>
     public partial class App : Application
     {
+        public static KeyBindings KeyBindings { get; set;}
+
+        private void Application_Exit(object sender, ExitEventArgs e)
+        {
+            
+            // save keybindings to settings
+        }
     }
 }

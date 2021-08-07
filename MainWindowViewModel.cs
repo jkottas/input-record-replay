@@ -1,8 +1,9 @@
-﻿using Prism.Commands;
+﻿using InputRecordReplay.MVVM;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -12,44 +13,52 @@ namespace InputRecordReplay
     public class MainWindowViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
+        private void Notify([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
-        public string RecordButtonText { get; set; }
-        public string PlaybackButtonText { get; set; }
+        private string _recordButtonText = "";
+        public string RecordButtonText { get { return _recordButtonText; } set { _recordButtonText = value; Notify(); } }
+        private string _playbackButtonText = "";
+        public string PlaybackButtonText { get { return _playbackButtonText; } set { _playbackButtonText = value; Notify(); } }
 
-        public DelegateCommand RecordButtonClick { get; private set; }
-        public DelegateCommand PlaybackButtonClick { get; private set; }
-        public DelegateCommand SettingsButtonClick;
+        public DelegateCommand RecordButtonCommand { get; private set; }
+        public DelegateCommand PlaybackButtonCommand { get; private set; }
+
+        private KeyBindings _keyBindings;
 
         public MainWindowViewModel()
         {
             RecordButtonText = "Record (r)";
             PlaybackButtonText = "Playback (p)";
-            RecordButtonClick = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
-            PlaybackButtonClick = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
-            SettingsButtonClick = new DelegateCommand(PerformSettingsButtonClick);
+            RecordButtonCommand = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
+            PlaybackButtonCommand = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
+            _keyBindings = RestoreUserKeybindings();
         }
 
-        private bool RecordButtonCanExecute()
+        private bool RecordButtonCanExecute(object parameter)
         {
             return true;
         }
 
-        private void RecordButtonExecute()
+        private void RecordButtonExecute(object parameter)
         {
             RecordButtonText = "Stop Recording (s)";
         }
 
-        private bool PlaybackButtonCanExecute()
+        private bool PlaybackButtonCanExecute(object parameter)
         {
             return true;
         }
 
-        private void PlaybackButtonExecute()
+        private void PlaybackButtonExecute(object parameter)
         {
         }
 
-        private void PerformSettingsButtonClick()
+        private KeyBindings RestoreUserKeybindings()
         {
+            return new KeyBindings();
         }
     }
 }
