@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InputRecordReplay.InputHooks
 {
@@ -17,6 +13,10 @@ namespace InputRecordReplay.InputHooks
         public const int WH_KEYBOARD_LL = 13;
         public const int WH_MOUSE_LL = 14;
 
+        public const uint INPUT_MOUSE = 0;
+        public const uint INPUT_KEYBOARD = 1;
+        public const uint INPUT_HARDWARE = 2;
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr SetWindowsHookEx(int idHook, DeviceHookHandler lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -29,6 +29,43 @@ namespace InputRecordReplay.InputHooks
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+        [DllImport("user32.dll")]
+        public static extern void mouse_event(uint dwFlags, int dx, int dy, uint dwData, int dwExtraInfo);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, int lParam);
+
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(uint hWnd, uint Msg, uint wParam, uint lParam);
+
+        [DllImport("user32.dll")]
+        internal static extern uint SendInput(uint nInputs, [MarshalAs(UnmanagedType.LPArray), In] INPUT[] pInputs, int cbSize);
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct MOUSEKEYBDHARDWAREINPUT
+    {
+        [FieldOffset(0)]
+        public MSLLHOOKSTRUCT Mouse;
+
+        [FieldOffset(0)]
+        public KBDHOOKSTRUCT Keyboard;
+
+        [FieldOffset(0)]
+        public HARDWAREINPUT Hardware;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct INPUT
+    {
+        /// <summary>
+        /// INPUT_MOUSE, INPUT_KEYBOARD, or INPUT_HARDWARE
+        /// </summary>
+        public uint Type;
+        public MOUSEKEYBDHARDWAREINPUT Data;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -46,6 +83,24 @@ namespace InputRecordReplay.InputHooks
         public uint flags;
         public uint time;
         public IntPtr dwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct KBDHOOKSTRUCT
+    {
+        public ushort KeyCode;
+        public ushort Scan;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HARDWAREINPUT
+    {
+        public uint Msg;
+        public ushort ParamL;
+        public ushort ParamH;
     }
 
     public enum MouseMessages

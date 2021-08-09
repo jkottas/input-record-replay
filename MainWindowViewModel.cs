@@ -31,52 +31,88 @@ namespace InputRecordReplay
         public DelegateCommand RecordButtonCommand { get; private set; }
         public DelegateCommand PlaybackButtonCommand { get; private set; }
 
-        private KeyBindings _keyBindings;
-        private MouseHook _mouseHook;
-        private KeyboardHook _keyboardHook;
+        private List<string> _logMessages = new List<string>();
+        public string LogMessages { get { return string.Join("\n", _logMessages); } }
 
-        public MainWindowViewModel()
+        private KeyBindings _keyBindings;
+        private Player _player;
+
+        public MainWindowViewModel(uint handle)
         {
             RecordButtonText = "Record (r)";
             PlaybackButtonText = "Playback (p)";
             RecordButtonCommand = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
             PlaybackButtonCommand = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
             _keyBindings = RestoreUserKeybindings();
-            _mouseHook = new MouseHook();
-            _mouseHook.Install();
-            _mouseHook.MouseMove += _mouseHook_MouseMove;
-            _keyboardHook = new KeyboardHook();
-            _keyboardHook.Install();
-            _keyboardHook.KeyDown += _keyboardHook_KeyDown;
+            _player = new Player(handle);
+            _player.OnInput += _player_OnInput;
+            _player.OnLog += _player_OnLog;
+            _player.OnStateChanged += _player_OnStateChanged;
         }
 
-        private void _keyboardHook_KeyDown(VKeys key)
+        private void _player_OnStateChanged()
         {
-            RecentKeypress = key.ToString();
+            try
+            {
+                if (_player.IsRecording)
+                    RecordButtonText = "Stop Recording (s)";
+                else
+                    RecordButtonText = "Start Recording (r)";
+                if (_player.IsPlaying)
+                    PlaybackButtonText = "Stop (s)";
+                else
+                    PlaybackButtonText = "Play (p)";
+                RecordButtonCommand.RaiseCanExecuteChanged();
+                PlaybackButtonCommand.RaiseCanExecuteChanged();
+            }
+            catch (Exception e)
+            {
+                Log("Threw exception in _player_OnStateChanged " + e.Message);
+            }
         }
 
-        private void _mouseHook_MouseMove(MSLLHOOKSTRUCT mouseStruct)
+        private void _player_OnLog(string obj)
         {
-            RecentMouse = $"{mouseStruct.pt.x}, {mouseStruct.pt.y}";
+            Log(obj);
+        }
+
+        private void Log(string message)
+        {
+            _logMessages.Add(message);
+            if (_logMessages.Count > 40)
+                _logMessages.RemoveAt(0);
+            Notify("LogMessages");
+        }
+
+        private void _player_OnInput(string whatHappened)
+        {
+            RecentKeypress = whatHappened;
         }
 
         private bool RecordButtonCanExecute(object parameter)
         {
-            return true;
+            return !_player.IsPlaying;
         }
 
         private void RecordButtonExecute(object parameter)
         {
-            RecordButtonText = "Stop Recording (s)";
+            if (_player.IsRecording)
+                _player.StopRecording();
+            else
+                _player.StartRecording();
         }
 
         private bool PlaybackButtonCanExecute(object parameter)
         {
-            return true;
+            return !_player.IsRecording;
         }
 
         private void PlaybackButtonExecute(object parameter)
         {
+            if (_player.IsPlaying)
+                _player.StopPlayback();
+            else
+                _player.StartPlayback();
         }
 
         private KeyBindings RestoreUserKeybindings()
@@ -86,8 +122,7 @@ namespace InputRecordReplay
 
         public void Cleanup()
         {
-            _mouseHook?.Uninstall();
-            _keyboardHook?.Uninstall();
+            _player?.Cleanup();
         }
     }
 }

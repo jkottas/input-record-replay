@@ -22,6 +22,8 @@ namespace InputRecordReplay.InputHooks
         /// <param name="mouseStruct">MSLLHOOKSTRUCT mouse structure</param>
         public delegate void MouseHookCallback(MSLLHOOKSTRUCT mouseStruct);
 
+        public event Action<INPUT> OnMouseInput;
+
         #region Events
         public event MouseHookCallback LeftButtonDown;
         public event MouseHookCallback LeftButtonUp;
@@ -75,43 +77,56 @@ namespace InputRecordReplay.InputHooks
         /// </summary>
         private IntPtr HookFunc(int nCode, IntPtr wParam, IntPtr lParam)
         {
-            // parse system messages
-            if (nCode >= 0)
+            MSLLHOOKSTRUCT rawMouseData = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
+            rawMouseData.time = 0;
+            //int action = wParam.ToInt32();
+            //int flag = (action == WM_KEYUP || action == WM_SYSKEYUP) ? 0x0002 : 0x0000;
+            INPUT mouseInput = new INPUT
             {
-                MouseMessages mouseMessage = (MouseMessages)wParam;
-                switch (mouseMessage)
+                Type = INPUT_MOUSE,
+                Data =
                 {
-                    case MouseMessages.WM_LBUTTONDOWN:
-                        LeftButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_LBUTTONUP:
-                        LeftButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_MOUSEMOVE:
-                        MouseMove?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_MOUSEWHEEL:
-                        MouseWheel?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_RBUTTONDOWN:
-                        RightButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_RBUTTONUP:
-                        RightButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_LBUTTONDBLCLK:
-                        DoubleClick?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_MBUTTONDOWN:
-                        MiddleButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    case MouseMessages.WM_MBUTTONUP:
-                        MiddleButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
-                        break;
-                    default:
-                        break;
+                    Mouse = rawMouseData
                 }
-            }
+            };
+            OnMouseInput?.Invoke(mouseInput);
+            // parse system messages
+            //if (nCode >= 0)
+            //{
+            //    MouseMessages mouseMessage = (MouseMessages)wParam;
+            //    switch (mouseMessage)
+            //    {
+            //        case MouseMessages.WM_LBUTTONDOWN:
+            //            LeftButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_LBUTTONUP:
+            //            LeftButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_MOUSEMOVE:
+            //            MouseMove?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_MOUSEWHEEL:
+            //            MouseWheel?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_RBUTTONDOWN:
+            //            RightButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_RBUTTONUP:
+            //            RightButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_LBUTTONDBLCLK:
+            //            DoubleClick?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_MBUTTONDOWN:
+            //            MiddleButtonDown?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        case MouseMessages.WM_MBUTTONUP:
+            //            MiddleButtonUp?.Invoke((MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT)));
+            //            break;
+            //        default:
+            //            break;
+            //    }
+            //}
             return CallNextHookEx(hookID, nCode, wParam, lParam);
         }
     }
