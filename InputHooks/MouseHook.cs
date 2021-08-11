@@ -36,6 +36,22 @@ namespace InputRecordReplay.InputHooks
         public event MouseHookCallback MiddleButtonUp;
         #endregion
 
+        public const int MouseEventMove = 0x01;
+        public const int MouseEventLeftDown = 0x02;
+        public const int MouseEventLeftUp = 0x04;
+        public const int MouseEventRightDown = 0x08;
+        public const int MouseEventRightUp = 0x10;
+        public const int MouseEventMiddleDown = 0x20;
+        public const int MouseEventMiddleUp = 0x40;
+        public const int MouseEventXDown = 0x80;
+        public const int MouseEventXUp = 0x100;
+        public const int MouseEventFWheel = 0x0800;
+        public const int MouseEventFHWheel = 0x1000;
+        public const int MouseEventAbsolute = 0x8000;
+
+        private double screenHeight = 0;
+        private double screenWidth = 0;
+
         /// <summary>
         /// Low level mouse hook's ID
         /// </summary>
@@ -47,6 +63,8 @@ namespace InputRecordReplay.InputHooks
         /// <param name="mouseHookCallbackFunc">Callback function</param>
         public void Install()
         {
+            screenHeight = System.Windows.SystemParameters.PrimaryScreenHeight;
+            screenWidth = System.Windows.SystemParameters.PrimaryScreenWidth;
             _hookHandler = HookFunc;
             hookID = SetHook(_hookHandler);
         }
@@ -72,23 +90,65 @@ namespace InputRecordReplay.InputHooks
             return SetWindowsHookEx(WH_MOUSE_LL, proc, GetModuleHandle(module.ModuleName), 0);
         }
 
+        POINT TranslateXY(POINT original)
+        {
+            return new POINT()
+            {
+                x = (int)((original.x * 0xFFFF) / (screenWidth -1)),
+                y = (int)((original.y * 0xFFFF) / (screenHeight -1)),
+            };
+        }
+
         /// <summary>
         /// Callback function
         /// </summary>
         private IntPtr HookFunc(int nCode, IntPtr wParam, IntPtr lParam)
         {
             MSLLHOOKSTRUCT rawMouseData = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-            rawMouseData.time = 0;
-            //int action = wParam.ToInt32();
-            //int flag = (action == WM_KEYUP || action == WM_SYSKEYUP) ? 0x0002 : 0x0000;
+
+            uint flags = MouseEventAbsolute | MouseEventMove;
+            switch ((MouseMessages)wParam)
+            {
+                case MouseMessages.WM_LBUTTONDOWN:
+                    flags = MouseEventLeftDown;
+                    break;
+                case MouseMessages.WM_LBUTTONUP:
+                    flags = MouseEventLeftUp;
+                    break;
+                case MouseMessages.WM_RBUTTONDOWN:
+                    flags = MouseEventRightDown;
+                    break;
+                case MouseMessages.WM_RBUTTONUP:
+                    flags = MouseEventRightUp;
+                    break;
+                default:
+                case MouseMessages.WM_MOUSEMOVE:
+                    flags = MouseEventAbsolute | MouseEventMove;
+                    break;
+                case MouseMessages.WM_MOUSEWHEEL:
+                    flags = MouseEventFWheel;
+                    break;
+            }
             INPUT mouseInput = new INPUT
             {
                 Type = INPUT_MOUSE,
                 Data =
                 {
-                    Mouse = rawMouseData
+                    Mouse = new MSLLHOOKSTRUCT()
+                    {
+                        dwExtraInfo = rawMouseData.dwExtraInfo,
+                        flags = flags,
+                        mouseData = rawMouseData.mouseData,
+                        pt = TranslateXY(rawMouseData.pt),
+                        time = 0,
+                    }
                 }
             };
+        
+    
+
+
+
             OnMouseInput?.Invoke(mouseInput);
             // parse system messages
             //if (nCode >= 0)
