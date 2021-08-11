@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Input;
-using System.Windows.Interop;
 
 namespace InputRecordReplay
 {
@@ -17,10 +16,7 @@ namespace InputRecordReplay
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            var wih = new WindowInteropHelper(this);
-            uint handle = (uint)wih.Handle;
-
-            DataContext = new MainWindowViewModel(handle);
+            DataContext = new MainWindowViewModel();
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)

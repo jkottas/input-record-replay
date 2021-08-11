@@ -29,11 +29,9 @@ namespace InputRecordReplay
         private MouseHook _mouseHook;
         private KeyboardHook _keyboardHook;
         private CancellationTokenSource _playbackCancel;
-        private uint _handle;
 
-        public Player(uint handle)
+        public Player()
         {
-            _handle = handle;
             _mouseHook = new MouseHook();
             _mouseHook.Install();
             _mouseHook.OnMouseInput += _mouseHook_OnMouseInput;

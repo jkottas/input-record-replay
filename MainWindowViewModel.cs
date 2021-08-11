@@ -28,6 +28,15 @@ namespace InputRecordReplay
         private string _recentMouse = "";
         public string RecentMouse { get { return _recentMouse; } set { _recentMouse = value; Notify(); } }
 
+        private string _recordButtonBeginKey = "";
+        public string RecordButtonBeginKey { get { return _recordButtonBeginKey; } set { _recordButtonBeginKey = value; Notify(); } }
+        private string _recordButtonEndKey = "";
+        public string RecordButtonEndKey { get { return _recordButtonEndKey; } set { _recordButtonEndKey = value; Notify(); } }
+        private string _playbackButtonBeginKey = "";
+        public string PlaybackButtonBeginKey { get { return _playbackButtonBeginKey; } set { _playbackButtonBeginKey = value; Notify(); } }
+        private string _playbackButtonEndKey = "";
+        public string PlaybackButtonEndKey { get { return _playbackButtonEndKey; } set { _playbackButtonEndKey = value; Notify(); } }
+
         public DelegateCommand RecordButtonCommand { get; private set; }
         public DelegateCommand PlaybackButtonCommand { get; private set; }
 
@@ -37,14 +46,14 @@ namespace InputRecordReplay
         private KeyBindings _keyBindings;
         private Player _player;
 
-        public MainWindowViewModel(uint handle)
+        public MainWindowViewModel()
         {
             RecordButtonText = "Record (r)";
             PlaybackButtonText = "Playback (p)";
             RecordButtonCommand = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
             PlaybackButtonCommand = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
             _keyBindings = RestoreUserKeybindings();
-            _player = new Player(handle);
+            _player = new Player();
             _player.OnInput += _player_OnInput;
             _player.OnLog += _player_OnLog;
             _player.OnStateChanged += _player_OnStateChanged;
