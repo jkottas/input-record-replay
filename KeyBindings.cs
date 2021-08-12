@@ -8,15 +8,17 @@ namespace InputRecordReplay
 {
     public class KeyBindings
     {
-        public string RecordButton { get; set; }
-        public string StopButton { get; set; }
-        public string PlayButton { get; set; }
+        public string RecordBeginButton { get; set; }
+        public string RecordEndButton { get; set; }
+        public string PlaybackBeginButton { get; set; }
+        public string PlaybackEndButton { get; set; }
 
         public KeyBindings()
         {
-            RecordButton = "r";
-            StopButton = "s";
-            PlayButton = "p";
+            RecordBeginButton = "KEY_R";
+            RecordEndButton = "KEY_S";
+            PlaybackBeginButton = "KEY_P";
+            PlaybackEndButton = "KEY_S";
         }
     }
 }
