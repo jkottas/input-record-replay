@@ -13,10 +13,11 @@ namespace InputRecordReplay.InputHooks
     {
         private DeviceHookHandler _hookHandler;
 
-        public delegate void KeyboardHookCallback(VKeys key);
+        //public delegate void KeyboardHookCallback(VKeys key);
 
-        public event KeyboardHookCallback KeyDown;
-        public event KeyboardHookCallback KeyUp;
+        //public event KeyboardHookCallback KeyDown;
+        //public event KeyboardHookCallback KeyUp;
+        public event Action<INPUT> OnKeyboardInput;
 
         private IntPtr _hookID = IntPtr.Zero;
 
@@ -47,20 +48,39 @@ namespace InputRecordReplay.InputHooks
         {
             if (nCode >= 0)
             {
-                int iwParam = wParam.ToInt32();
-                switch (iwParam)
+                ushort key = (ushort)Marshal.ReadInt32(lParam);
+                int action = wParam.ToInt32();
+                uint flag = (uint)((action == WM_KEYUP || action == WM_SYSKEYUP) ? 0x0002 : 0x0000);
+                INPUT rawKeyboardInput = new INPUT
                 {
-                    case WM_KEYDOWN:
-                    case WM_SYSKEYDOWN:
-                        KeyDown?.Invoke((VKeys)Marshal.ReadInt32(lParam));
-                        break;
-                    case WM_KEYUP:
-                    case WM_SYSKEYUP:
-                        KeyUp?.Invoke((VKeys)Marshal.ReadInt32(lParam));
-                        break;
-                    default:
-                        break;
-                }
+                    Type = INPUT_KEYBOARD,
+                    Data =
+                    {
+                        Keyboard = new KBDHOOKSTRUCT
+                        {
+                            KeyCode = key,
+                            Scan = 0,
+                            Flags = flag,
+                            Time = 0,
+                            ExtraInfo = IntPtr.Zero,
+                        }
+                    }
+                };
+                OnKeyboardInput?.Invoke(rawKeyboardInput);
+            //    int iwParam = wParam.ToInt32();
+            //    switch (iwParam)
+            //    {
+            //        case WM_KEYDOWN:
+            //        case WM_SYSKEYDOWN:
+            //            KeyDown?.Invoke((VKeys)Marshal.ReadInt32(lParam));
+            //            break;
+            //        case WM_KEYUP:
+            //        case WM_SYSKEYUP:
+            //            KeyUp?.Invoke((VKeys)Marshal.ReadInt32(lParam));
+            //            break;
+            //        default:
+            //            break;
+            //    }
             }
 
             return CallNextHookEx(_hookID, nCode, wParam, lParam);

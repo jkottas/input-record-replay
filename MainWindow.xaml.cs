@@ -11,6 +11,11 @@ namespace InputRecordReplay
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
             DataContext = new MainWindowViewModel();
         }
 
@@ -23,12 +28,18 @@ namespace InputRecordReplay
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
             SettingsPopup s = new SettingsPopup();
+            s.DataContext = DataContext;
             s.ShowDialog();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             (DataContext as MainWindowViewModel)?.Cleanup();
+        }
+
+        private void QuitButton_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
         }
     }
 }

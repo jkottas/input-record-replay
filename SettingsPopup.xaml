@@ -5,8 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:InputRecordReplay"
         mc:Ignorable="d"
-        Title="SettingsPopup" Height="450" Width="800">
+        d:DataContext="{d:DesignInstance local:MainWindowViewModel, IsDesignTimeCreatable=true}"
+        Title="SettingsPopup" Height="250" Width="300">
     <Grid>
-        <TextBlock Text="hi" />
+        <!--<TextBlock Text="{Binding LogMessages}" />-->
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Recording begin" Margin="2"/>
+                <TextBox Text="{Binding RecordingBeginKey, Mode=TwoWay}" Width="20" Margin="2"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Recording end" Margin="2"/>
+                <TextBox Text="{Binding RecordingEndKey, Mode=TwoWay}" Width="20" Margin="2"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Playback begin" Margin="2"/>
+                <TextBox Text="{Binding PlaybackBeginKey, Mode=TwoWay}" Width="20" Margin="2"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Playback end" Margin="2"/>
+                <TextBox Text="{Binding PlaybackEndKey, Mode=TwoWay}" Width="20" Margin="2"/>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </Window>
