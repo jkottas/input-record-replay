@@ -13,10 +13,10 @@ namespace InputRecordReplay.InputHooks
     {
         private DeviceHookHandler _hookHandler;
 
-        //public delegate void KeyboardHookCallback(VKeys key);
+        public delegate void KeyboardHookCallback(VKeys key);
 
-        //public event KeyboardHookCallback KeyDown;
-        //public event KeyboardHookCallback KeyUp;
+        public event KeyboardHookCallback KeyDown;
+        public event KeyboardHookCallback KeyUp;
         public event Action<INPUT> OnKeyboardInput;
 
         private IntPtr _hookID = IntPtr.Zero;
@@ -67,20 +67,19 @@ namespace InputRecordReplay.InputHooks
                     }
                 };
                 OnKeyboardInput?.Invoke(rawKeyboardInput);
-            //    int iwParam = wParam.ToInt32();
-            //    switch (iwParam)
-            //    {
-            //        case WM_KEYDOWN:
-            //        case WM_SYSKEYDOWN:
-            //            KeyDown?.Invoke((VKeys)Marshal.ReadInt32(lParam));
-            //            break;
-            //        case WM_KEYUP:
-            //        case WM_SYSKEYUP:
-            //            KeyUp?.Invoke((VKeys)Marshal.ReadInt32(lParam));
-            //            break;
-            //        default:
-            //            break;
-            //    }
+                switch (action)
+                {
+                    case WM_KEYDOWN:
+                    case WM_SYSKEYDOWN:
+                        KeyDown?.Invoke((VKeys)Marshal.ReadInt32(lParam));
+                        break;
+                    case WM_KEYUP:
+                    case WM_SYSKEYUP:
+                        KeyUp?.Invoke((VKeys)Marshal.ReadInt32(lParam));
+                        break;
+                    default:
+                        break;
+                }
             }
 
             return CallNextHookEx(_hookID, nCode, wParam, lParam);

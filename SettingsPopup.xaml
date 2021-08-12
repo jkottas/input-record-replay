@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:InputRecordReplay"
         mc:Ignorable="d"
+        Closing="Window_Closing"
         d:DataContext="{d:DesignInstance local:MainWindowViewModel, IsDesignTimeCreatable=true}"
         Title="SettingsPopup" Height="250" Width="300">
     <Grid>
@@ -12,19 +13,19 @@
         <StackPanel Orientation="Vertical">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Recording begin" Margin="2"/>
-                <TextBox Text="{Binding RecordingBeginKey, Mode=TwoWay}" Width="20" Margin="2"/>
+                <TextBox x:Name="recordingBox" IsReadOnly="True" Text="{Binding RecordButtonBeginKey, Mode=OneWay}" GotFocus="recordingBox_GotFocus" Width="20" Margin="2"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Recording end" Margin="2"/>
-                <TextBox Text="{Binding RecordingEndKey, Mode=TwoWay}" Width="20" Margin="2"/>
+                <TextBox x:Name="recordingEndBox" IsReadOnly="True" Text="{Binding RecordButtonEndKey, Mode=OneWay}" GotFocus="recordingEndBox_GotFocus" Width="20" Margin="2"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Playback begin" Margin="2"/>
-                <TextBox Text="{Binding PlaybackBeginKey, Mode=TwoWay}" Width="20" Margin="2"/>
+                <TextBox x:Name="playbackBox" IsReadOnly="True" Text="{Binding PlaybackButtonBeginKey, Mode=OneWay}" GotFocus="playbackBox_GotFocus" Width="20" Margin="2"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Playback end" Margin="2"/>
-                <TextBox Text="{Binding PlaybackEndKey, Mode=TwoWay}" Width="20" Margin="2"/>
+                <TextBox x:Name="plabackEndBox" IsReadOnly="True" Text="{Binding PlaybackButtonEndKey, Mode=OneWay}" GotFocus="plabackEndBox_GotFocus" Width="20" Margin="2"/>
             </StackPanel>
         </StackPanel>
     </Grid>

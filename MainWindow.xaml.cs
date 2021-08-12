@@ -29,7 +29,8 @@ namespace InputRecordReplay
         {
             SettingsPopup s = new SettingsPopup();
             s.DataContext = DataContext;
-            s.ShowDialog();
+            _ = s.ShowDialog();
+            (DataContext as MainWindowViewModel)?.SaveUserKeybindings();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

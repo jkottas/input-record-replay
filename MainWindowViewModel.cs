@@ -1,4 +1,5 @@
 ﻿using InputRecordReplay.InputHooks;
+using InputRecordReplay.Models;
 using InputRecordReplay.MVVM;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -19,23 +21,18 @@ namespace InputRecordReplay
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private string _recordButtonText = "";
-        public string RecordButtonText { get { return _recordButtonText; } set { _recordButtonText = value; Notify(); } }
-        private string _playbackButtonText = "";
-        public string PlaybackButtonText { get { return _playbackButtonText; } set { _playbackButtonText = value; Notify(); } }
+        public string RecordButtonText { get { return _player?.IsRecording??false?$"Stop Record({RecordButtonEndKey})":$"Record({RecordButtonBeginKey})"; } }
+        public string PlaybackButtonText { get { return _player?.IsPlaying ?? false ? $"Stop Playback({PlaybackButtonEndKey})" : $"Play({PlaybackButtonBeginKey})"; } }
+
         private string _recentKeypress = "";
         public string RecentKeypress { get { return _recentKeypress; } set { _recentKeypress = value; Notify(); } }
         private string _recentMouse = "";
         public string RecentMouse { get { return _recentMouse; } set { _recentMouse = value; Notify(); } }
 
-        private string _recordButtonBeginKey = "";
-        public string RecordButtonBeginKey { get { return _recordButtonBeginKey; } set { _recordButtonBeginKey = value; Notify(); } }
-        private string _recordButtonEndKey = "";
-        public string RecordButtonEndKey { get { return _recordButtonEndKey; } set { _recordButtonEndKey = value; Notify(); } }
-        private string _playbackButtonBeginKey = "";
-        public string PlaybackButtonBeginKey { get { return _playbackButtonBeginKey; } set { _playbackButtonBeginKey = value; Notify(); } }
-        private string _playbackButtonEndKey = "";
-        public string PlaybackButtonEndKey { get { return _playbackButtonEndKey; } set { _playbackButtonEndKey = value; Notify(); } }
+        public string RecordButtonBeginKey { get { return ConvertKeyName(_keyBindings?.RecordBeginButton); } }
+        public string RecordButtonEndKey { get { return ConvertKeyName(_keyBindings?.RecordEndButton); } }
+        public string PlaybackButtonBeginKey { get { return ConvertKeyName(_keyBindings?.PlaybackBeginButton); } }
+        public string PlaybackButtonEndKey { get { return ConvertKeyName(_keyBindings?.PlaybackEndButton); } }
 
         public DelegateCommand RecordButtonCommand { get; private set; }
         public DelegateCommand PlaybackButtonCommand { get; private set; }
@@ -44,33 +41,43 @@ namespace InputRecordReplay
         public string LogMessages { get { return string.Join("\n", _logMessages); } }
 
         private KeyBindings _keyBindings;
+        private KeyBindings KeyBindings
+        {
+            get { return _keyBindings; }
+            set
+            {
+                _keyBindings = value;
+                Notify(nameof(RecordButtonBeginKey));
+                Notify(nameof(RecordButtonEndKey));
+                Notify(nameof(PlaybackButtonBeginKey));
+                Notify(nameof(PlaybackButtonEndKey));
+                Notify(nameof(RecordButtonText));
+                Notify(nameof(PlaybackButtonText));
+            }
+        }
+
+        private SettingsBoxes _selectedSettingsBox = SettingsBoxes.None;
+
         private Player _player;
 
         public MainWindowViewModel()
         {
-            RecordButtonText = "Record (r)";
-            PlaybackButtonText = "Playback (p)";
+            KeyBindings = RestoreUserKeybindings();            
             RecordButtonCommand = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
             PlaybackButtonCommand = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
-            _keyBindings = RestoreUserKeybindings();
             _player = new Player();
             _player.OnInput += _player_OnInput;
             _player.OnLog += _player_OnLog;
             _player.OnStateChanged += _player_OnStateChanged;
+            _player.KeyboardKeyDown += _player_KeyboardKeyDown;
         }
 
         private void _player_OnStateChanged()
         {
             try
             {
-                if (_player.IsRecording)
-                    RecordButtonText = "Stop Recording (s)";
-                else
-                    RecordButtonText = "Start Recording (r)";
-                if (_player.IsPlaying)
-                    PlaybackButtonText = "Stop (s)";
-                else
-                    PlaybackButtonText = "Play (p)";
+                Notify(nameof(RecordButtonText));
+                Notify(nameof(PlaybackButtonText));
                 RecordButtonCommand.RaiseCanExecuteChanged();
                 PlaybackButtonCommand.RaiseCanExecuteChanged();
             }
@@ -90,7 +97,7 @@ namespace InputRecordReplay
             _logMessages.Add(message);
             if (_logMessages.Count > 40)
                 _logMessages.RemoveAt(0);
-            Notify("LogMessages");
+            Notify(nameof(LogMessages));
         }
 
         private void _player_OnInput(string whatHappened)
@@ -126,7 +133,62 @@ namespace InputRecordReplay
 
         private KeyBindings RestoreUserKeybindings()
         {
-            return new KeyBindings();
+            string previousBindings = Properties.Settings.Default.KeyBindings;
+            if (string.IsNullOrEmpty(previousBindings))
+                return new KeyBindings();
+            else
+                return JsonSerializer.Deserialize<KeyBindings>(previousBindings);
+        }
+
+        public void SaveUserKeybindings()
+        {
+            Properties.Settings.Default.KeyBindings = JsonSerializer.Serialize(KeyBindings);
+            Properties.Settings.Default.Save();
+            Notify(nameof(PlaybackButtonText));
+            Notify(nameof(RecordButtonText));
+        }
+
+        public void SettingsBoxSelected(SettingsBoxes box)
+        {
+            _selectedSettingsBox = box;
+        }
+
+        private void _player_KeyboardKeyDown(string obj)
+        {
+            switch (_selectedSettingsBox)
+            {
+                case SettingsBoxes.None:
+                default:
+                    // do nothing
+                    break;
+                case SettingsBoxes.RecordingBegin:
+                    _keyBindings.RecordBeginButton = obj;
+                    Notify(nameof(RecordButtonBeginKey));
+                    break;
+                case SettingsBoxes.RecordingEnd:
+                    _keyBindings.RecordEndButton = obj;
+                    Notify(nameof(RecordButtonEndKey));
+                    break;
+                case SettingsBoxes.PlaybackBegin:
+                    _keyBindings.PlaybackBeginButton = obj;
+                    Notify(nameof(PlaybackButtonBeginKey));
+                    break;
+                case SettingsBoxes.PlaybackEnd:
+                    _keyBindings.PlaybackEndButton = obj;
+                    Notify(nameof(PlaybackButtonEndKey));
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Takes a raw key string from the Win32.VKeys enum and converts it to a simple key. 
+        /// For instance, "KEY_S" becomes "S"
+        /// </summary>
+        /// <param name="rawKey"></param>
+        /// <returns></returns>
+        public string ConvertKeyName(string rawKey)
+        {
+            return rawKey.Replace("KEY_", "");
         }
 
         public void Cleanup()

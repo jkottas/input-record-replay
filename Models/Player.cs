@@ -19,6 +19,7 @@ namespace InputRecordReplay
         public event Action<string> OnInput;
         public event Action OnStateChanged;
         public event Action<string> OnLog;
+        public event Action<string> KeyboardKeyDown;
         private bool _isRecording = false;
         public bool IsRecording { get { return _isRecording; } private set { _isRecording = value; OnStateChanged?.Invoke(); } }
         private bool _isPlaying = false;
@@ -38,7 +39,13 @@ namespace InputRecordReplay
             _keyboardHook = new KeyboardHook();
             _keyboardHook.Install();
             _keyboardHook.OnKeyboardInput += _keyboardHook_OnKeyboardInput;
+            _keyboardHook.KeyDown += _keyboardHook_KeyDown;
             _stopwatch = new Stopwatch();
+        }
+
+        private void _keyboardHook_KeyDown(VKeys key)
+        {
+            KeyboardKeyDown?.Invoke(key.ToString());
         }
 
         private void _keyboardHook_OnKeyboardInput(INPUT obj)
