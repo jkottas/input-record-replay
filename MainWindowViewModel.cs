@@ -1,6 +1,7 @@
 ﻿using InputRecordReplay.InputHooks;
 using InputRecordReplay.Models;
 using InputRecordReplay.MVVM;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,8 +22,16 @@ namespace InputRecordReplay
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public string RecordButtonText { get { return _player?.IsRecording??false?$"Stop Record({RecordButtonEndKey})":$"Record({RecordButtonBeginKey})"; } }
-        public string PlaybackButtonText { get { return _player?.IsPlaying ?? false ? $"Stop Playback({PlaybackButtonEndKey})" : $"Play({PlaybackButtonBeginKey})"; } }
+        public string RecordButtonText { get { return $"Record({RecordButtonBeginKey})"; } }
+        public string RecordStopButtonText { get { return $"Stop Record({RecordButtonEndKey})"; } }
+        public string PlaybackButtonText { get { return $"Play({PlaybackButtonBeginKey})"; } }
+        public string PlaybackStopButtonText { get { return $"Stop Playback({PlaybackButtonEndKey})"; } }
+        public string LoadButtonText { get { return $"Load({LoadButtonKey})"; } }
+
+        private string _currentPlaybackElapsed = "0";
+        public string CurrentPlaybackElapsed { get { return _currentPlaybackElapsed; } set { _currentPlaybackElapsed = value; Notify(); } }
+        private string _maxPlaybackElapsed = "100";
+        public string MaxPlaybackElapsed { get { return _maxPlaybackElapsed; } set { _maxPlaybackElapsed = value; Notify(); } }
 
         private string _recentKeypress = "";
         public string RecentKeypress { get { return _recentKeypress; } set { _recentKeypress = value; Notify(); } }
@@ -33,9 +42,13 @@ namespace InputRecordReplay
         public string RecordButtonEndKey { get { return ConvertKeyName(_keyBindings?.RecordEndButton); } }
         public string PlaybackButtonBeginKey { get { return ConvertKeyName(_keyBindings?.PlaybackBeginButton); } }
         public string PlaybackButtonEndKey { get { return ConvertKeyName(_keyBindings?.PlaybackEndButton); } }
+        public string LoadButtonKey { get { return ConvertKeyName(_keyBindings?.LoadButton); } }
 
         public DelegateCommand RecordButtonCommand { get; private set; }
+        public DelegateCommand RecordStopButtonCommand { get; private set; }
         public DelegateCommand PlaybackButtonCommand { get; private set; }
+        public DelegateCommand PlaybackStopButtonCommand { get; private set; }
+        public DelegateCommand LoadButtonCommand { get; private set; }
 
         private List<string> _logMessages = new List<string>();
         public string LogMessages { get { return string.Join("\n", _logMessages); } }
@@ -53,6 +66,7 @@ namespace InputRecordReplay
                 Notify(nameof(PlaybackButtonEndKey));
                 Notify(nameof(RecordButtonText));
                 Notify(nameof(PlaybackButtonText));
+                Notify(nameof(LoadButtonText));
             }
         }
 
@@ -64,7 +78,10 @@ namespace InputRecordReplay
         {
             KeyBindings = RestoreUserKeybindings();            
             RecordButtonCommand = new DelegateCommand(RecordButtonExecute, RecordButtonCanExecute);
+            RecordStopButtonCommand = new DelegateCommand(RecordStopButtonExecute, RecordStopButtonCanExecute);
             PlaybackButtonCommand = new DelegateCommand(PlaybackButtonExecute, PlaybackButtonCanExecute);
+            PlaybackStopButtonCommand = new DelegateCommand(PlaybackStopButtonExecute, PlaybackStopButtonCanExecute);
+            LoadButtonCommand = new DelegateCommand(LoadButtonExecute, LoadButtonCanExecute);
             _player = new Player();
             _player.OnInput += _player_OnInput;
             _player.OnLog += _player_OnLog;
@@ -76,10 +93,10 @@ namespace InputRecordReplay
         {
             try
             {
-                Notify(nameof(RecordButtonText));
-                Notify(nameof(PlaybackButtonText));
                 RecordButtonCommand.RaiseCanExecuteChanged();
+                RecordStopButtonCommand.RaiseCanExecuteChanged();
                 PlaybackButtonCommand.RaiseCanExecuteChanged();
+                PlaybackStopButtonCommand.RaiseCanExecuteChanged();
             }
             catch (Exception e)
             {
@@ -107,28 +124,55 @@ namespace InputRecordReplay
 
         private bool RecordButtonCanExecute(object parameter)
         {
-            return !_player.IsPlaying;
+            return !_player.IsPlaying && !_player.IsRecording;
         }
 
         private void RecordButtonExecute(object parameter)
         {
-            if (_player.IsRecording)
-                _player.StopRecording();
-            else
-                _player.StartRecording();
+            _player.StartRecording();
+        }
+
+        private bool RecordStopButtonCanExecute(object parameter)
+        {
+            return _player.IsRecording;
+        }
+
+        private void RecordStopButtonExecute(object parameter)
+        {
+            _player.StopRecording();
         }
 
         private bool PlaybackButtonCanExecute(object parameter)
         {
-            return !_player.IsRecording;
+            return !_player.IsRecording && !_player.IsPlaying;
         }
 
         private void PlaybackButtonExecute(object parameter)
         {
-            if (_player.IsPlaying)
-                _player.StopPlayback();
-            else
-                _player.StartPlayback();
+            _player.StartPlayback();
+        }
+        private bool PlaybackStopButtonCanExecute(object parameter)
+        {
+            return _player.IsPlaying;
+        }
+
+        private void PlaybackStopButtonExecute(object parameter)
+        {
+            _player.StopPlayback();
+        }
+
+        private void LoadButtonExecute(object parameter)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            if (ofd.ShowDialog() == true)
+            {
+                // load the recording
+            }
+        }
+
+        private bool LoadButtonCanExecute(object parameter)
+        {
+            return !_player.IsPlaying && !_player.IsRecording;
         }
 
         private KeyBindings RestoreUserKeybindings()
@@ -144,8 +188,10 @@ namespace InputRecordReplay
         {
             Properties.Settings.Default.KeyBindings = JsonSerializer.Serialize(KeyBindings);
             Properties.Settings.Default.Save();
-            Notify(nameof(PlaybackButtonText));
             Notify(nameof(RecordButtonText));
+            Notify(nameof(RecordStopButtonText));
+            Notify(nameof(PlaybackButtonText));
+            Notify(nameof(PlaybackStopButtonText));
         }
 
         public void SettingsBoxSelected(SettingsBoxes box)
@@ -159,7 +205,16 @@ namespace InputRecordReplay
             {
                 case SettingsBoxes.None:
                 default:
-                    // do nothing
+                    if (obj == _keyBindings.RecordBeginButton && RecordButtonCanExecute(null))
+                        RecordButtonExecute(null);
+                    else if (obj == _keyBindings.RecordEndButton && RecordStopButtonCanExecute(null))
+                        RecordStopButtonExecute(null);
+                    else if (obj == _keyBindings.PlaybackBeginButton && PlaybackButtonCanExecute(null))
+                        PlaybackButtonExecute(null);
+                    else if (obj == _keyBindings.PlaybackEndButton && PlaybackStopButtonCanExecute(null))
+                        PlaybackStopButtonExecute(null);
+                    else if (obj == _keyBindings.LoadButton && LoadButtonCanExecute(null))
+                        LoadButtonExecute(null);
                     break;
                 case SettingsBoxes.RecordingBegin:
                     _keyBindings.RecordBeginButton = obj;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace InputRecordReplay.MVVM
 {
@@ -13,6 +14,7 @@ namespace InputRecordReplay.MVVM
         private readonly Action<object> _execute;
 
         public event EventHandler CanExecuteChanged;
+        private Dispatcher _dispatcher;
 
         public DelegateCommand(Action<object> execute): this(execute, null)
         {
@@ -20,6 +22,7 @@ namespace InputRecordReplay.MVVM
 
         public DelegateCommand(Action<object> execute, Predicate<object> canExecute)
         {
+            _dispatcher = Dispatcher.CurrentDispatcher;
             _execute = execute;
             _canExecute = canExecute;
         }
@@ -36,7 +39,7 @@ namespace InputRecordReplay.MVVM
 
         public void RaiseCanExecuteChanged()
         {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            _dispatcher.BeginInvoke(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty));
         }
     }
 }

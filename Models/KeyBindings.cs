@@ -12,6 +12,7 @@ namespace InputRecordReplay.Models
         public string RecordEndButton { get; set; }
         public string PlaybackBeginButton { get; set; }
         public string PlaybackEndButton { get; set; }
+        public string LoadButton { get; set; }
 
         public KeyBindings()
         {
@@ -19,6 +20,7 @@ namespace InputRecordReplay.Models
             RecordEndButton = "KEY_S";
             PlaybackBeginButton = "KEY_P";
             PlaybackEndButton = "KEY_S";
+            LoadButton = "KEY_L";
         }
     }
 }
