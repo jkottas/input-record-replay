@@ -27,6 +27,10 @@
                 <TextBlock Text="Playback end" Margin="2"/>
                 <TextBox x:Name="plabackEndBox" IsReadOnly="True" Text="{Binding PlaybackButtonEndKey, Mode=OneWay}" GotFocus="plabackEndBox_GotFocus" Width="20" Margin="2"/>
             </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Load" Margin="2"/>
+                <TextBox x:Name="LoadBox" IsReadOnly="True" Text="{Binding LoadButtonKey, Mode=OneWay}" GotFocus="LoadBox_GotFocus" Width="20" Margin="2"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

@@ -20,13 +20,14 @@ namespace InputRecordReplay
         public event Action OnStateChanged;
         public event Action<string> OnLog;
         public event Action<string> KeyboardKeyDown;
+        public event Action PlaybackComplete; // fires once each time the playback completes.
         private bool _isRecording = false;
         public bool IsRecording { get { return _isRecording; } private set { _isRecording = value; OnStateChanged?.Invoke(); } }
         private bool _isPlaying = false;
         public bool IsPlaying { get { return _isPlaying; } private set { _isPlaying = value; OnStateChanged?.Invoke(); } }
         public Stopwatch _stopwatch;
 
-        private List<PlaybackRecord> playbackRecords;
+        public List<PlaybackRecord> PlaybackRecords;
         private MouseHook _mouseHook;
         private KeyboardHook _keyboardHook;
         private CancellationTokenSource _playbackCancel;
@@ -52,7 +53,7 @@ namespace InputRecordReplay
         {
             if (IsRecording)
             {
-                playbackRecords.Add(new PlaybackRecord()
+                PlaybackRecords.Add(new PlaybackRecord()
                 {
                     when = _stopwatch.Elapsed,
                     input = obj,
@@ -64,7 +65,7 @@ namespace InputRecordReplay
         {
             if (IsRecording)
             {
-                playbackRecords.Add(new PlaybackRecord()
+                PlaybackRecords.Add(new PlaybackRecord()
                 {
                     when = _stopwatch.Elapsed,
                     input = obj
@@ -72,49 +73,9 @@ namespace InputRecordReplay
             }
         }
 
-        //private void _mouseHook_OnMousePacket(int arg1, uint arg2, uint arg3)
-        //{
-        //    if (IsRecording)
-        //    {
-        //        playbackRecords.Add(new PlaybackRecord()
-        //        {
-        //            msg = (uint)arg1,
-        //            wParam = arg2,
-        //            lParam = arg3,
-        //        });
-        //    }
-        //}
-
-        //private void _keyboardHook_KeyDown(VKeys key)
-        //{
-        //    OnInput?.Invoke(key.ToString());
-        //    //if (IsRecording)
-        //    //    playbackRecords.Add(new PlaybackRecord()
-        //    //    {
-        //    //        type = 'k',
-        //    //        when = _stopwatch.Elapsed,
-        //    //    });
-        //}
-
-        //private void _mouseHook_MouseMove(MSLLHOOKSTRUCT mouseStruct)
-        //{
-        //    OnInput?.Invoke($"{mouseStruct.pt.x}, {mouseStruct.pt.y}");
-        //    //if (IsRecording)
-        //    //    playbackRecords.Add(new PlaybackRecord()
-        //    //    {
-        //    //        type = 'm',
-        //    //        when = _stopwatch.Elapsed,
-        //    //        dwFlags = mouseStruct.flags,
-        //    //        dx = mouseStruct.pt.x,
-        //    //        dy = mouseStruct.pt.y,
-        //    //        dwData = mouseStruct.mouseData,
-        //    //        dwExtraInfo = (int)mouseStruct.dwExtraInfo,
-        //    //    });
-        //}
-
         public void StartRecording()
         {
-            playbackRecords = new List<PlaybackRecord>();
+            PlaybackRecords = new List<PlaybackRecord>();
             _stopwatch.Restart();
             IsRecording = true;
         }
@@ -123,36 +84,35 @@ namespace InputRecordReplay
         {
             IsRecording = false;
             _stopwatch.Stop();
-            OnLog?.Invoke("Recording has " + playbackRecords.Count + " entries. Over " + _stopwatch.Elapsed.TotalSeconds + " seconds.");
-            // TODO: save playbackRecords
+            PlaybackRecords.RemoveRange(PlaybackRecords.Count - 5, 5); // last entry will be the mouse click or keyboard press that ended the recording. We don't want that.
+            OnLog?.Invoke("Recording has " + PlaybackRecords.Count + " entries. Over " + _stopwatch.Elapsed.TotalSeconds + " seconds.");
         }
 
         public void StartPlayback()
         {
             IsPlaying = true;
-            _stopwatch.Restart();
             _playbackCancel = new CancellationTokenSource();
             Task.Run(async () =>
             {
                 try
                 {
-                    int sizeOfINPUT = Marshal.SizeOf(typeof(INPUT));
-                    OnLog?.Invoke("Starting playback...");
-                    while (playbackRecords.Count > 0)
+                    while (!_playbackCancel.IsCancellationRequested) // play forever
                     {
-                        PlaybackRecord upNext = playbackRecords[0];
-                        playbackRecords.RemoveAt(0);
-                        TimeSpan howLongFromNow = upNext.when - _stopwatch.Elapsed;
-                    if (howLongFromNow.Ticks > 0)
-                        await Task.Delay((int)howLongFromNow.TotalMilliseconds);
-                        //Thread.Sleep((int)howLongFromNow.TotalMilliseconds);
-                        var result = SendInput(1, new INPUT[] { upNext.input }, sizeOfINPUT);
-                        OnLog?.Invoke("sendinput: " + result);
-                    //mouse_event(upNext.dwFlags, upNext.dx, upNext.dy, upNext.dwData, upNext.dwExtraInfo);
-                    //SendMessage(_handle, upNext.wParam, upNext.msg, upNext.lParam);
+                        List<PlaybackRecord> playbackRecordsCopy = new List<PlaybackRecord>(PlaybackRecords);
+                        int sizeOfINPUT = Marshal.SizeOf(typeof(INPUT));
+                        OnLog?.Invoke("Starting playback...");
+                        _stopwatch.Restart();
+                        while (!_playbackCancel.IsCancellationRequested && playbackRecordsCopy.Count > 0)
+                        {
+                            PlaybackRecord upNext = playbackRecordsCopy[0];
+                            playbackRecordsCopy.RemoveAt(0);
+                            TimeSpan howLongFromNow = upNext.when - _stopwatch.Elapsed;
+                            if (howLongFromNow.Ticks > 0)
+                                await Task.Delay((int)howLongFromNow.TotalMilliseconds);
+                            var result = SendInput(1, new INPUT[] { upNext.input }, sizeOfINPUT);
+                        }
+                        PlaybackComplete?.Invoke();
                     }
-                    OnLog?.Invoke("Completed playback...");
-                    OnLog?.Invoke("playback records now has " + playbackRecords.Count + " entries.");
                 }
                 catch (Exception e)
                 {
@@ -164,9 +124,9 @@ namespace InputRecordReplay
 
         public void StopPlayback()
         {
+            _playbackCancel.Cancel();
             _stopwatch.Stop();
             IsPlaying = false;
-            _playbackCancel.Cancel();
         }
 
         public void Cleanup()

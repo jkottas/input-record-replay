@@ -25,27 +25,21 @@
                 <ColumnDefinition Width="5*" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="2.5*" />
-                <RowDefinition Height="3.75*" />
-                <RowDefinition Height="3.75*" />
+                <RowDefinition Height="2.8*" />
+                <RowDefinition Height="3.6*" />
+                <RowDefinition Height="3.6*" />
             </Grid.RowDefinitions>
             <Grid Margin="2" Background="DarkGray" Grid.Row="0" Grid.ColumnSpan="2">
                 <TextBlock Text="Input Recorder" Margin="0,4,0,0"/>
-                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
-                    <Button Margin="2" Click="SettingsButton_Click">
-                        <Button.Template>
-                            <ControlTemplate>
-                                <ContentControl x:Name="SettingsIcon" Content="{StaticResource SettingsIcon}"/>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-                    <Button Margin="2" Click="QuitButton_Click">
-                        <Button.Template>
-                            <ControlTemplate>
-                                <ContentControl x:Name="QuitIcon" Content="{StaticResource QuitIcon}"/>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,2,0">
+                    <Grid>
+                        <ContentControl x:Name="SettingsIcon" Content="{StaticResource SettingsIcon}" Margin="0,0,2,0"/>
+                        <Button Click="SettingsButton_Click" Background="Transparent" BorderBrush="Transparent" />
+                    </Grid>
+                    <Grid>
+                        <ContentControl x:Name="QuitIcon" Content="{StaticResource QuitIcon}" Margin="0,0,2,0"/>
+                        <Button Click="QuitButton_Click" Background="Transparent" BorderBrush="Transparent" />
+                    </Grid>
                 </StackPanel>
             </Grid>
 
@@ -85,10 +79,16 @@
                     </Style>
                 </Button.Resources>
             </Button>
-            <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding TimesPlayed}" />
+                    <TextBlock Text=" plays" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding CurrentPlaybackElapsed}" />
                 <TextBlock Text="/" />
                 <TextBlock Text="{Binding MaxPlaybackElapsed}" />
+            </StackPanel>
             </StackPanel>
         </Grid>
     </Border>

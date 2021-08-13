@@ -129,7 +129,7 @@ namespace InputRecordReplay.InputHooks
                     flags = MouseEventFWheel;
                     break;
             }
-            INPUT mouseInput = new INPUT
+            INPUT mouseInput = new INPUT()
             {
                 Type = INPUT_MOUSE,
                 Data =

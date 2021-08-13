@@ -51,12 +51,12 @@ namespace InputRecordReplay.InputHooks
                 ushort key = (ushort)Marshal.ReadInt32(lParam);
                 int action = wParam.ToInt32();
                 uint flag = (uint)((action == WM_KEYUP || action == WM_SYSKEYUP) ? 0x0002 : 0x0000);
-                INPUT rawKeyboardInput = new INPUT
+                INPUT rawKeyboardInput = new INPUT()
                 {
                     Type = INPUT_KEYBOARD,
                     Data =
                     {
-                        Keyboard = new KBDHOOKSTRUCT
+                        Keyboard = new KBDHOOKSTRUCT()
                         {
                             KeyCode = key,
                             Scan = 0,

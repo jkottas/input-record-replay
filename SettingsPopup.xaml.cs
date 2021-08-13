@@ -49,5 +49,10 @@ namespace InputRecordReplay
         {
             (DataContext as MainWindowViewModel).SettingsBoxSelected(SettingsBoxes.None);
         }
+
+        private void LoadBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            (DataContext as MainWindowViewModel).SettingsBoxSelected(SettingsBoxes.Load);
+        }
     }
 }

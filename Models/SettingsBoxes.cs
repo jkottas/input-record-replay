@@ -12,6 +12,7 @@ namespace InputRecordReplay.Models
         RecordingBegin,
         RecordingEnd,
         PlaybackBegin,
-        PlaybackEnd
+        PlaybackEnd,
+        Load,
     }
 }
